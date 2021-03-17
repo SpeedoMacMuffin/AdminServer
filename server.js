@@ -98,37 +98,29 @@ app.put("/auth", passCheck, comparePW, async (req, res) => {
 
 app.get("/shutdown", (__, res) => {
   //sudo shutdown -h now
-  script = exec(
-    `node /Users/klarm/Desktop/piratebox-tests/socket-test/AdminServer/Scripts/shutdown.js`,
-    opt,
-    (err, stdout, stderr) => {
-      if (err) {
-        console.log(err);
-      } else {
-        res.json({
-          output: stdout,
-          error: stderr,
-        });
-      }
+  script = exec(`node Scripts/shutdown.js`, opt, (err, stdout, stderr) => {
+    if (err) {
+      console.log(err);
+    } else {
+      res.json({
+        output: stdout,
+        error: stderr,
+      });
     }
-  );
+  });
 });
 app.get("/reboot", (__, res) => {
   //change Path on Pi
-  script = exec(
-    `node /Users/klarm/Desktop/piratebox-tests/socket-test/AdminServer/Scripts/reboot.js`,
-    opt,
-    (err, stdout, stderr) => {
-      if (err) {
-        console.log(err);
-      } else {
-        res.json({
-          output: stdout,
-          error: stderr,
-        });
-      }
+  script = exec(`node Scripts/reboot.js`, opt, (err, stdout, stderr) => {
+    if (err) {
+      console.log(err);
+    } else {
+      res.json({
+        output: stdout,
+        error: stderr,
+      });
     }
-  );
+  });
 });
 app.get("/wifi", (__, res) => {
   //change Path on Pi
@@ -147,23 +139,23 @@ app.get("/wifi", (__, res) => {
     }
   );
 });
-app.put("/wifiop", (req, res) => {
+app.put("/wifiop", async (req, res) => {
   const { ssid, private } = req.body;
   console.log(ssid);
   //change Path on Pi
-  fs.writeFile("hostapd.conf", `ssid: ${ssid}`, (err, res) => {
+  await fs.writeFile("hostapd.conf", `ssid: ${ssid}`, (err, res) => {
     if (err) {
       console.log(err);
     } else {
       console.log(res);
     }
   });
-  script = exec(`echo "open settings!"`, opt, (err, stdout, stderr) => {
+  script = exec(`echo "file created!"`, opt, (err, stdout, stderr) => {
     if (err) {
       console.log(err);
     } else {
       res.json({
-        output: stdout,
+        message: stdout.toString(),
         error: stderr,
       });
     }

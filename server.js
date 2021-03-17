@@ -111,7 +111,7 @@ app.get("/shutdown", (__, res) => {
 });
 app.get("/reboot", (__, res) => {
   //change Path on Pi
-  script = exec(`sudo shutdown -r now`, opt, (err, stdout, stderr) => {
+  script = exec(`sudo reboot`, opt, (err, stdout, stderr) => {
     if (err) {
       console.log(err);
     } else {

@@ -13,7 +13,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const hashs = db.collection("hashs");
-const crypto = db.collection("cryptos");
 
 const passCheck = async (req, res, next) => {
   const dbCheck = await hashs.findOne({ name: "sudo" });
@@ -31,6 +30,7 @@ const passCheck = async (req, res, next) => {
   }
 };
 
+//sends
 app.get("/auth", passCheck, async (req, res) => {
   const pass = await hashs.findOne({ name: "sudo" });
   console.log(pass);

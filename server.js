@@ -98,7 +98,7 @@ app.put("/auth", passCheck, comparePW, async (req, res) => {
 
 app.get("/shutdown", (__, res) => {
   //sudo shutdown -h now
-  script = exec(`node Scripts/shutdown.js`, opt, (err, stdout, stderr) => {
+  script = exec(`sudo shutdown -h now`, opt, (err, stdout, stderr) => {
     if (err) {
       console.log(err);
     } else {
@@ -111,7 +111,7 @@ app.get("/shutdown", (__, res) => {
 });
 app.get("/reboot", (__, res) => {
   //change Path on Pi
-  script = exec(`node Scripts/reboot.js`, opt, (err, stdout, stderr) => {
+  script = exec(`sudo shutdown -r now`, opt, (err, stdout, stderr) => {
     if (err) {
       console.log(err);
     } else {

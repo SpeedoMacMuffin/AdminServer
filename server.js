@@ -6,8 +6,7 @@ const server = require("./serverConfig");
 const PORT = server.PORT;
 const exec = require("child_process").exec;
 const fs = require("fs");
-const iwconfig = require("wireless-tools/iwconfig")
-const hostapd = require("wireless-tools/hostapd")
+const raspiInfo = require("raspberry-info")
 const path = require("path");
 opt = {
   cwd: process.argv[2] ? path.resolve(process.argv[2]) : process.cwd(),
@@ -248,5 +247,37 @@ app.put("/wifipriv", wifiCheck, async (req, res) => {
   }
   }
 });
+
+app.get("/system", async (__, res) => {
+  let cpuTemp
+  let memorytotal
+  let memoryused
+   await raspiInfo.getCPUTemperature().then(output => cpuTemp = output)
+   await raspiInfo.getMemoryTotal().then(output => memorytotal = output)
+   await raspiInfo.getMemoryUsage().then(output => memoryused = output)
+  res.json({
+    message: "success",
+    cpuTemp: cpuTemp,
+    memorytotal: memorytotal,
+    memoryused: memoryused
+  })
+})
+app.get("/space", async (__, res) => {
+  let availableSpace
+  let usedSpace
+  script = await exec(`df -H / --output=avail,used`)
+ script.stdout.on('data', function(data){
+  availableSpace = data.replace("Avail\n", "")
+  console.log(data.replace("Used/n", ""))
+
+  res.json({
+    message: "success",
+    available: availableSpace,
+    used: usedSpace,
+    data: data.replace("Avail|Used|/n", "")
+  })
+});
+
+})
 
 app.listen(PORT, console.log(`DeadNode-AdminServer connected on port ${PORT}`));

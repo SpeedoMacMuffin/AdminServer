@@ -3,6 +3,9 @@ const server = require("./serverConfig");
 
 mongoose.connect(`mongodb://${server.dbURL}:27017/deadnode`, {
   useNewUrlParser: true,
+  useCreateIndex: true, 
+    useUnifiedTopology: true, 
+    useFindAndModify: false
 });
 
 const db = mongoose.connection;

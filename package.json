@@ -15,7 +15,6 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "mongoose": "^4.0.1",
-    "raspberry-info": "^1.0.4",
-    "wireless-tools": "^0.19.0"
+    "raspberry-info": "^1.0.4"
   }
 }

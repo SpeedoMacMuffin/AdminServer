@@ -258,7 +258,7 @@ app.put("/wifipriv", checkWireless, wifiCheck, async (req, res) => {
             script.on("exit", function (code) {
               const filter = { name: "sudo" };
               creds.updateOne(filter, {
-                $set: { ssid: ssid, required: privateWifi },
+                $set: { ssid: ssid, required: privateWifi, pw: newPassKey },
               });
               res.json({
                 message: "updated!",

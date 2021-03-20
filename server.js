@@ -6,7 +6,7 @@ const server = require("./serverConfig");
 const PORT = server.PORT;
 const exec = require("child_process").exec;
 const fs = require("fs");
-const raspiInfo = require("raspberry-info")
+const raspiInfo = require("raspberry-info");
 const path = require("path");
 opt = {
   cwd: process.argv[2] ? path.resolve(process.argv[2]) : process.cwd(),
@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const hashs = db.collection("hashs");
-const creds = db.collection("creds")
+const creds = db.collection("creds");
 
 const passCheck = async (req, res, next) => {
   const dbCheck = await hashs.findOne({ name: "sudo" });
@@ -123,161 +123,184 @@ app.get("/reboot", (__, res) => {
     }
   });
 });
-app.get("/wifi", async (__, res) => {
+
+const checkWireless = async (req, res, next) => {
+  const dbCheck = await creds.findOne({ name: "sudo" });
+  if (dbCheck == null) {
+    await creds.insertOne({
+      name: "sudo",
+      pw: "ChangeMe",
+      required: true,
+      ssid: "DeadNode",
+    });
+    next();
+  } else {
+    next();
+  }
+};
+app.get("/wifi", checkWireless, async (__, res) => {
   //change Path on Pi
- 
-  const wificred = await creds.findOne({ name: "sudo"});
+
+  const wificred = await creds.findOne({ name: "sudo" });
   res.json({
     message: "successfull",
     ssid: wificred.ssid,
     pw: wificred.pw,
-    required: wificred.required
-  })
- 
-
-});
-app.put("/wifiop", async (req, res) => {
-  const { ssid, privateWifi } = req.body;
-  if(privateWifi){
-    return res.status(500)
-  }else {
-    await fs.writeFile("hostapd.conf", 
-    `interface=wlan0\nssid=${ssid}\nhw_mode=g\nchannel=7\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0`,
-    (err, result) => {
-      if(err){
-        console.log(err)
-      } else {
-        console.log("file created!" + result)
-        script = exec(`sudo mv /home/pi/AdminServer/hostapd.conf /etc/hostapd/hostapd.conf`)
-        script.stdout.on('data', function(data){
-          console.log(data.toString());
-      });
-      script.stderr.on('data', function(data){
-        console.log(data.toString());
-    });
-    script.on('exit', function(code){
-      const filter = { name: "sudo" };
-      creds.updateOne(filter, { $set: { ssid: ssid, required: privateWifi } });
-      res.json({
-        message: "updated!",
-        changed: true,
-      });
+    required: wificred.required,
   });
-          
-      }
-    })
-    
-  }
-  
 });
-
+app.put("/wifiop", checkWireless, async (req, res) => {
+  const { ssid, privateWifi } = req.body;
+  if (privateWifi) {
+    return res.status(500);
+  } else {
+    await fs.writeFile(
+      "hostapd.conf",
+      `interface=wlan0\nssid=${ssid}\nhw_mode=g\nchannel=7\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0`,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("file created!" + result);
+          script = exec(
+            `sudo mv /home/pi/AdminServer/hostapd.conf /etc/hostapd/hostapd.conf`
+          );
+          script.stdout.on("data", function (data) {
+            console.log(data.toString());
+          });
+          script.stderr.on("data", function (data) {
+            console.log(data.toString());
+          });
+          script.on("exit", function (code) {
+            const filter = { name: "sudo" };
+            creds.updateOne(filter, {
+              $set: { ssid: ssid, required: privateWifi },
+            });
+            res.json({
+              message: "updated!",
+              changed: true,
+            });
+          });
+        }
+      }
+    );
+  }
+});
 
 const wifiCheck = async (req, res, next) => {
-  const {passKey} = req.body
-  const wificred = await creds.findOne({ name: "sudo"});
-  if(passKey !== wificred.pw){
+  const { passKey } = req.body;
+  const wificred = await creds.findOne({ name: "sudo" });
+  if (passKey !== wificred.pw) {
     return res.json({
       message: "incorrect Password!",
       changed: false,
     });
   } else {
-    next()
+    next();
   }
-}
+};
 
-app.put("/wifipriv", wifiCheck, async (req, res) => {
-  
+app.put("/wifipriv", checkWireless, wifiCheck, async (req, res) => {
   const { ssid, privateWifi, passKey, newPassKey } = req.body;
-  console.log(newPassKey)
-  if(!privateWifi){
-    return res.status(500)
-  }else {
-    if(!newPassKey){
-    await fs.writeFile("hostapd.conf", 
-    `interface=wlan0\nssid=${ssid}\nhw_mode=g\nchannel=7\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0\nwpa=2\nwpa_passphrase=${passKey}\nwpa_key_mgmt=WPA-PSK\nwpa_pairwise=TKIP\nrsn_pairwise=CCMP`,
-    (err, result) => {
-      if(err){
-        console.log(err)
-      } else {
-        console.log("file created!" + result)
-        script = exec(`sudo mv /home/pi/AdminServer/hostapd.conf /etc/hostapd/hostapd.conf`)
-        script.stdout.on('data', function(data){
-          console.log(data.toString());
-      });
-      script.stderr.on('data', function(data){
-        console.log(data.toString());
-    });
-    script.on('exit', function(code){
-      const filter = { name: "sudo" };
-      creds.updateOne(filter, { $set: { ssid: ssid, required: privateWifi } });
-      res.json({
-        message: "updated!",
-        changed: true,
-      });
-  });
-          
-      }
-    })
+  console.log(newPassKey);
+  if (!privateWifi) {
+    return res.status(500);
   } else {
-    await fs.writeFile("hostapd.conf", 
-    `interface=wlan0\nssid=${ssid}\nhw_mode=g\nchannel=7\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0\nwpa=2\nwpa_passphrase=${newPassKey}\nwpa_key_mgmt=WPA-PSK\nwpa_pairwise=TKIP\nrsn_pairwise=CCMP`,
-    (err, result) => {
-      if(err){
-        console.log(err)
-      } else {
-        console.log("file created!" + result)
-        script = exec(`sudo mv /home/pi/AdminServer/hostapd.conf /etc/hostapd/hostapd.conf`)
-        script.stdout.on('data', function(data){
-          console.log(data.toString());
-      });
-      script.stderr.on('data', function(data){
-        console.log(data.toString());
-    });
-    script.on('exit', function(code){
-      const filter = { name: "sudo" };
-      creds.updateOne(filter, { $set: { ssid: ssid, required: privateWifi } });
-      res.json({
-        message: "updated!",
-        changed: true,
-      });
-  });
-          
-      }
-    })
-  }
+    if (!newPassKey) {
+      await fs.writeFile(
+        "hostapd.conf",
+        `interface=wlan0\nssid=${ssid}\nhw_mode=g\nchannel=7\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0\nwpa=2\nwpa_passphrase=${passKey}\nwpa_key_mgmt=WPA-PSK\nwpa_pairwise=TKIP\nrsn_pairwise=CCMP`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log("file created!" + result);
+            script = exec(
+              `sudo mv /home/pi/AdminServer/hostapd.conf /etc/hostapd/hostapd.conf`
+            );
+            script.stdout.on("data", function (data) {
+              console.log(data.toString());
+            });
+            script.stderr.on("data", function (data) {
+              console.log(data.toString());
+            });
+            script.on("exit", function (code) {
+              const filter = { name: "sudo" };
+              creds.updateOne(filter, {
+                $set: { ssid: ssid, required: privateWifi },
+              });
+              res.json({
+                message: "updated!",
+                changed: true,
+              });
+            });
+          }
+        }
+      );
+    } else {
+      await fs.writeFile(
+        "hostapd.conf",
+        `interface=wlan0\nssid=${ssid}\nhw_mode=g\nchannel=7\nmacaddr_acl=0\nauth_algs=1\nignore_broadcast_ssid=0\nwpa=2\nwpa_passphrase=${newPassKey}\nwpa_key_mgmt=WPA-PSK\nwpa_pairwise=TKIP\nrsn_pairwise=CCMP`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log("file created!" + result);
+            script = exec(
+              `sudo mv /home/pi/AdminServer/hostapd.conf /etc/hostapd/hostapd.conf`
+            );
+            script.stdout.on("data", function (data) {
+              console.log(data.toString());
+            });
+            script.stderr.on("data", function (data) {
+              console.log(data.toString());
+            });
+            script.on("exit", function (code) {
+              const filter = { name: "sudo" };
+              creds.updateOne(filter, {
+                $set: { ssid: ssid, required: privateWifi },
+              });
+              res.json({
+                message: "updated!",
+                changed: true,
+              });
+            });
+          }
+        }
+      );
+    }
   }
 });
 
 app.get("/system", async (__, res) => {
-  let cpuTemp
-  let memorytotal
-  let memoryused
-   await raspiInfo.getCPUTemperature().then(output => cpuTemp = output)
-   await raspiInfo.getMemoryTotal().then(output => memorytotal = output)
-   await raspiInfo.getMemoryUsage().then(output => memoryused = output)
+  let cpuTemp;
+  let memorytotal;
+  let memoryused;
+  await raspiInfo.getCPUTemperature().then((output) => (cpuTemp = output));
+  await raspiInfo.getMemoryTotal().then((output) => (memorytotal = output));
+  await raspiInfo.getMemoryUsage().then((output) => (memoryused = output));
   res.json({
     message: "success",
     cpuTemp: cpuTemp,
     memorytotal: memorytotal,
-    memoryused: memoryused
-  })
-})
-app.get("/space", async (__, res) => {
-  let availableSpace
-  let usedSpace
-  script = await exec(`df -H / --output=avail,used`)
- script.stdout.on('data', function(data){
-  availableSpace = data.replace("Avail\n", "")
-  console.log(data.replace("Used/n", ""))
-
-  res.json({
-    message: "success",
-    available: availableSpace,
-    used: usedSpace,
-    data: data.replace("Avail|Used|/n", "")
-  })
+    memoryused: memoryused,
+  });
 });
+app.get("/space", async (__, res) => {
+  let availableSpace;
+  let usedSpace;
+  script = await exec(`df -H / --output=avail,used`);
+  script.stdout.on("data", function (data) {
+    availableSpace = data.replace("Avail\n", "");
+    console.log(data.replace("Used/n", ""));
 
-})
+    res.json({
+      message: "success",
+      available: availableSpace,
+      used: usedSpace,
+      data: data.replace("Avail|Used|/n", ""),
+    });
+  });
+});
 
 app.listen(PORT, console.log(`DeadNode-AdminServer connected on port ${PORT}`));

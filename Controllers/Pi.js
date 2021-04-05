@@ -4,8 +4,8 @@ const raspiInfo = require("raspberry-info");
 const { stderr } = require("process");
 
 const piController = {
+  //shuts down RPi
   shutdown: (__, res) => {
-    //sudo shutdown -h now
     script = exec(`sudo shutdown -h now`, opt, (err, stdout, stderr) => {
       if (err) {
         console.log(err);
@@ -17,6 +17,7 @@ const piController = {
       }
     });
   },
+  //Reboots RPi
   reboot: (__, res) => {
     script = exec(`sudo reboot`, opt, (err, stdout, stderr) => {
       if (err) {
@@ -29,6 +30,7 @@ const piController = {
       }
     });
   },
+  //gets RPi-Systeminfo(Temp, Memory)
   getSysInfo: async (__, res) => {
     let cpuTemp;
     let memorytotal;
@@ -43,6 +45,7 @@ const piController = {
       memoryused: memoryused,
     });
   },
+  //gets RPi-Diskinformation
   getSpaceInfo: async (__, res) => {
     let availableSpace;
     let usedSpace;

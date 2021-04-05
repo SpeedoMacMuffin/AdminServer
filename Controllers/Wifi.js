@@ -4,9 +4,8 @@ const db = require("../dbConfig");
 const creds = db.collection("creds");
 
 const wifiController = {
+  //gets Wifi-Information
   getWifiInfo: async (__, res) => {
-    //change Path on Pi
-
     const wificred = await creds.findOne({ name: "sudo" });
     res.json({
       message: "successfull",
@@ -15,6 +14,7 @@ const wifiController = {
       required: wificred.required,
     });
   },
+  //edits open wifi-config
   editOp: async (req, res) => {
     const { ssid, privateWifi } = req.body;
     if (privateWifi) {
@@ -52,6 +52,7 @@ const wifiController = {
       );
     }
   },
+  //edits private wifi-Config
   editPriv: async (req, res) => {
     const { ssid, privateWifi, passKey, newPassKey } = req.body;
     console.log(newPassKey);

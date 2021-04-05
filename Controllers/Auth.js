@@ -3,12 +3,14 @@ const db = require("../dbConfig");
 const hashs = db.collection("hashs");
 
 const authController = {
+  //gets authorization information
   getAuth: async (__, res) => {
     const pass = await hashs.findOne({ name: "sudo" });
     res.json({
       auth: pass.required,
     });
   },
+  //compare passwords
   tryAuth: async (req, res) => {
     const { password } = req.body;
     const pass = await hashs.findOne({ name: "sudo" });
@@ -22,6 +24,7 @@ const authController = {
       }
     });
   },
+  //updates password to newPassword
   updateAuth: async (req, res) => {
     const { password, newPassword } = req.body;
 

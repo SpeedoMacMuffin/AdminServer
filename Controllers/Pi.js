@@ -52,7 +52,6 @@ const piController = {
     script = await exec(`df -H / --output=avail,used`);
     script.stdout.on("data", function (data) {
       availableSpace = data.replace("Avail\n", "");
-      console.log(data.replace("Used/n", ""));
 
       res.json({
         message: "success",
